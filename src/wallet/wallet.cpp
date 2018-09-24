@@ -3708,6 +3708,8 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CTransac
                         return false;
                     }
                     vecCoins.assign(setCoinsTmp.begin(), setCoinsTmp.end());
+                } else {
+                    bnb_used = false;
                 }
 
                 // Fill vin
