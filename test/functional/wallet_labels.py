@@ -47,8 +47,7 @@ class WalletLabelsTest(BitcoinTestFramework):
         # There's some fee that will come back to us when the miner reward
         # matures.
         common_address = "yd5KMREs3GLMe6mTJYr3YrH1juwNwrFCfB"
-        txid = node.sendmany(
-            fromaccount="",
+        node.sendmany(
             amounts={common_address: 1000},
             minconf=1,
             addlocked=False,

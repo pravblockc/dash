@@ -877,7 +877,7 @@ static UniValue sendmany(const JSONRPCRequest& request)
             "\nSend two amounts to two different addresses setting the confirmation and comment:\n"
             + HelpExampleCli("sendmany", "\"\" \"{\\\"XwnLY9Tf7Zsef8gMGL2fhWA9ZmMjt4KPwG\\\":0.01,\\\"XuQQkwA4FYkq2XERzMY2CiAZhJTEDAbtcG\\\":0.02}\" 6 false \"testing\"") +
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("sendmany", "\"\", {\"1D1ZrZNe3JUo7ZycKEYQQiQAWd9y54F4XX\":0.01,\"1353tsE8YMTA4EuV7dgUXGjNFf9KpVvKHz\":0.02}, 6, \"testing\"")
+            + HelpExampleRpc("sendmany", "\"\", \"{\\\"XwnLY9Tf7Zsef8gMGL2fhWA9ZmMjt4KPwG\\\":0.01,\\\"XuQQkwA4FYkq2XERzMY2CiAZhJTEDAbtcG\\\":0.02}\", 6, false, \"testing\"")
         );
 
     // Make sure the results are valid at least up to the most recent block
@@ -966,9 +966,9 @@ static UniValue sendmany(const JSONRPCRequest& request)
     EnsureWalletIsUnlocked(pwallet);
 
     // Check funds
-    if (totalAmount > pwallet->GetLegacyBalance(ISMINE_SPENDABLE, nMinDepth, nullptr)) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Wallet has insufficient funds");
-    }
+    CAmount nBalance = pwallet->GetLegacyBalance(ISMINE_SPENDABLE, nMinDepth, nullptr, fAddLocked);
+    if (totalAmount > nBalance)
+        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Account has insufficient funds");
 
     // Send
     CReserveKey keyChange(pwallet);
@@ -1353,12 +1353,6 @@ static void ListTransactions(CWallet* const pwallet, const CWalletTx& wtx, int n
 
     bool involvesWatchonly = wtx.IsFromMe(ISMINE_WATCH_ONLY);
 
-    bool list_sent = fAllAccounts;
-
-    if (IsDeprecatedRPCEnabled("accounts")) {
-        list_sent |= strAccount == strSentAccount;
-    }
-
     // Sent
     if ((!listSent.empty() || nFee != 0))
     {
@@ -1493,8 +1487,12 @@ static UniValue listtransactions(const JSONRPCRequest& request)
     // the user could have gotten from another RPC command prior to now
     pwallet->BlockUntilSyncedToCurrentChain();
 
-    if (!request.params[0].isNull() && request.params[0].get_str() != "*") {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Dummy value must be set to \"*\"");
+    std::string strAccount = "*";
+    if (!request.params[0].isNull()) {
+        strAccount = request.params[0].get_str();
+        if (strAccount.empty()) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Label argument must be a valid label name or \"*\".");
+        }
     }
     int nCount = 10;
     if (!request.params[1].isNull())
@@ -4016,8 +4014,6 @@ UniValue walletcreatefundedpsbt(const JSONRPCRequest& request)
 static const CRPCCommand commands[] =
 { //  category              name                                actor (function)                argNames
     //  --------------------- ------------------------          -----------------------         ----------
-    { "generating",         "generate",                         &generate,                      {"nblocks","maxtries"} },
-    { "hidden",             "addwitnessaddress",                &addwitnessaddress,             {"address","p2sh"} },
     { "hidden",             "resendwallettransactions",         &resendwallettransactions,      {} },
     { "rawtransactions",    "fundrawtransaction",               &fundrawtransaction,            {"hexstring","options","iswitness"} },
     { "wallet",             "abandontransaction",               &abandontransaction,            {"txid"} },
@@ -4048,19 +4044,18 @@ static const CRPCCommand commands[] =
     { "wallet",             "listaddressgroupings",             &listaddressgroupings,          {} },
     { "wallet",             "listlabels",                       &listlabels,                    {"purpose"} },
     { "wallet",             "listlockunspent",                  &listlockunspent,               {} },
-    { "wallet",             "listreceivedbyaddress",            &listreceivedbyaddress,         {"minconf","include_empty","include_watchonly","address_filter"} },
+    { "wallet",             "listreceivedbyaddress",            &listreceivedbyaddress,         {"minconf", "addlocked", "include_empty","include_watchonly","address_filter"} },
     { "wallet",             "listreceivedbylabel",              &listreceivedbylabel,           {"minconf","include_empty","include_watchonly"} },
     { "wallet",             "listsinceblock",                   &listsinceblock,                {"blockhash","target_confirmations","include_watchonly","include_removed"} },
-    { "wallet",             "listtransactions",                 &listtransactions,              {"dummy","count","skip","include_watchonly"} },
+    { "wallet",             "listtransactions",                 &listtransactions,              {"label|dummy","count","skip","include_watchonly"} },
     { "wallet",             "listunspent",                      &listunspent,                   {"minconf","maxconf","addresses","include_unsafe","query_options"} },
     { "wallet",             "listwallets",                      &listwallets,                   {} },
     { "wallet",             "loadwallet",                       &loadwallet,                    {"filename"} },
     { "wallet",             "lockunspent",                      &lockunspent,                   {"unlock","transactions"} },
     { "wallet",             "removeprunedfunds",                &removeprunedfunds,             {"txid"} },
     { "wallet",             "rescanblockchain",                 &rescanblockchain,              {"start_height", "stop_height"} },
-    { "wallet",             "sendmany",                         &sendmany,                      {"dummy","amounts","minconf","comment","subtractfeefrom","replaceable","conf_target","estimate_mode"} },
+    { "wallet",             "sendmany",                         &sendmany,                      {"dummy","amounts","minconf","addlocked","comment","subtractfeefrom","replaceable","conf_target","estimate_mode"} },
     { "wallet",             "sendtoaddress",                    &sendtoaddress,                 {"address","amount","comment","comment_to","subtractfeefromamount","replaceable","conf_target","estimate_mode"} },
-    { "wallet",             "sethdseed",                        &sethdseed,                     {"newkeypool","seed"} },
     { "wallet",             "setlabel",                         &setlabel,                      {"address","label"} },
     { "wallet",             "settxfee",                         &settxfee,                      {"amount"} },
     { "wallet",             "setcoinjoinrounds",     &setcoinjoinrounds,     {"rounds"} },
@@ -4068,11 +4063,21 @@ static const CRPCCommand commands[] =
     { "wallet",             "signmessage",                      &signmessage,                   {"address","message"} },
     { "wallet",             "signrawtransactionwithwallet",     &signrawtransactionwithwallet,  {"hexstring","prevtxs","sighashtype"} },
     { "wallet",             "unloadwallet",                     &unloadwallet,                  {"wallet_name"} },
+    { "wallet",             "upgradetohd",                      &upgradetohd,                   {"mnemonic", "mnemonicpassphrase", "walletpassphrase"} },
     { "wallet",             "walletcreatefundedpsbt",           &walletcreatefundedpsbt,        {"inputs","outputs","locktime","options","bip32derivs"} },
     { "wallet",             "walletlock",                       &walletlock,                    {} },
     { "wallet",             "walletpassphrase",                 &walletpassphrase,              {"passphrase","timeout"} },
     { "wallet",             "walletpassphrasechange",           &walletpassphrasechange,        {"oldpassphrase","newpassphrase"} },
-    { "wallet",             "walletprocesspsbt",                &walletprocesspsbt,             {"psbt","sign","sighashtype","bip32derivs"} },
+#if ENABLE_MINER
+    { "generating",         "generate",                         &generate,                      {"nblocks","maxtries"} },
+#else
+    { "hidden",             "generate",                         &generate,                      {"nblocks","maxtries"} }, // Hidden as it isn't functional, just an error to let people know if miner isn't compiled
+#endif //ENABLE_MINER
+    { "wallet",             "keepass",                  &keepass,                  {} },
+    { "hidden",             "instantsendtoaddress",     &instantsendtoaddress,     {} },
+    { "wallet",             "dumphdinfo",               &dumphdinfo,               {} },
+    { "wallet",             "importelectrumwallet",     &importelectrumwallet,     {"filename", "index"} },
+    { "wallet",             "walletprocesspsbt",        &walletprocesspsbt,        {"psbt","sign","sighashtype","bip32derivs"} },
 };
 
 void RegisterWalletRPCCommands(CRPCTable &t)
