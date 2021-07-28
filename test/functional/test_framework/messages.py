@@ -372,6 +372,8 @@ class CBlockLocator:
 
 
 class COutPoint:
+    __slots__ = ("hash", "n")
+
     def __init__(self, hash=0, n=0xFFFFFFFF):
         self.hash = hash
         self.n = n
@@ -444,8 +446,7 @@ class CTxOut:
 
 
 class CTransaction:
-    __slots__ = ("hash", "nLockTime", "nVersion", "sha256", "vin", "vout",
-                 "wit")
+    __slots__ = ("hash", "nLockTime", "nVersion", "sha256", "vin", "vout", "wit", "nType", "vExtraPayload")
 
     def __init__(self, tx=None):
         if tx is None:
