@@ -3935,7 +3935,7 @@ UniValue signrawtransactionwithwallet(const JSONRPCRequest& request)
     }
 
     // Sign the transaction
-    LOCK2(cs_main, pwallet->cs_wallet);
+    LOCK2(cs_main, mempool.cs);
     LOCK(pwallet->cs_wallet);
     EnsureWalletIsUnlocked(pwallet);
 
