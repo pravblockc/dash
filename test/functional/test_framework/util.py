@@ -237,7 +237,7 @@ def wait_until(predicate, *, attempts=float('inf'), timeout=float('inf'), sleep=
 
     if do_assert:
         # Print the cause of the timeout
-        predicate_source = inspect.getsourcelines(predicate)
+        predicate_source = "''''\n" + inspect.getsource(predicate) + "'''"
         logger.error("wait_until() failed. Predicate: {}".format(predicate_source))
         if attempt >= attempts:
             raise AssertionError("Predicate {} not true after {} attempts".format(predicate_source, attempts))
@@ -327,7 +327,7 @@ def initialize_datadir(dirname, n, chain):
         chain_name_conf_section = chain
         chain_name_conf_arg_value = '1'
     with open(os.path.join(datadir, "dash.conf"), 'w', encoding='utf8') as f:
-        f.write("{}={}]\n".format(chain_name_conf_arg, chain_name_conf_arg_value))
+        f.write("{}={}\n".format(chain_name_conf_arg, chain_name_conf_arg_value))
         f.write("[{}]\n".format(chain_name_conf_section))
         f.write("port=" + str(p2p_port(n)) + "\n")
         f.write("rpcport=" + str(rpc_port(n)) + "\n")

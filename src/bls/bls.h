@@ -80,6 +80,8 @@ public:
         return *this;
     }
 
+    virtual ~CBLSWrapper() = default;
+
     bool operator==(const C& r) const
     {
         return fValid == r.fValid && impl == r.impl;
@@ -321,6 +323,7 @@ public:
     {
         *this = r;
     }
+    virtual ~CBLSLazyWrapper() = default;
 
     CBLSLazyWrapper& operator=(const CBLSLazyWrapper& r)
     {

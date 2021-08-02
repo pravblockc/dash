@@ -23,7 +23,42 @@ import sys
 import time
 import threading
 
-from test_framework.messages import CBlockHeader, MIN_VERSION_SUPPORTED, msg_addr, msg_addrv2, msg_block, msg_blocktxn, msg_clsig, msg_cmpctblock, msg_getaddr, msg_getblocks, msg_getblocktxn, msg_getdata, msg_getheaders, msg_getmnlistd, msg_headers, msg_inv, msg_islock, msg_mempool, msg_mnlistdiff, msg_ping, msg_pong, msg_qdata, msg_qgetdata, msg_reject, msg_sendaddrv2, msg_sendcmpct, msg_sendheaders, msg_tx, msg_verack, msg_version, MY_SUBVERSION, NODE_NETWORK, sha256
+from test_framework.messages import (
+    CBlockHeader,
+    MIN_VERSION_SUPPORTED,
+    msg_addr,
+    msg_addrv2,
+    msg_block,
+    msg_blocktxn,
+    msg_clsig,
+    msg_cmpctblock,
+    msg_getaddr,
+    msg_getblocks,
+    msg_getblocktxn,
+    msg_getdata,
+    msg_getheaders,
+    msg_getmnlistd,
+    msg_headers,
+    msg_inv,
+    msg_islock,
+    msg_mempool,
+    msg_mnlistdiff,
+    msg_notfound,
+    msg_ping,
+    msg_pong,
+    msg_qdata,
+    msg_qgetdata,
+    msg_reject,
+    msg_sendaddrv2,
+    msg_sendcmpct,
+    msg_sendheaders,
+    msg_tx,
+    msg_verack,
+    msg_version,
+    MY_SUBVERSION,
+    NODE_NETWORK,
+    sha256,
+)
 from test_framework.util import wait_until
 
 MSG_TX = 1
@@ -62,7 +97,7 @@ MESSAGEMAP = {
     b"govsync": None,
     b"islock": msg_islock,
     b"mnlistdiff": msg_mnlistdiff,
-    b"notfound": None,
+    b"notfound": msg_notfound,
     b"qfcommit": None,
     b"qsendrecsigs": None,
     b"qgetdata": msg_qgetdata,
@@ -102,7 +137,7 @@ class P2PConnection(asyncio.Protocol):
     def is_connected(self):
         return self._transport is not None
 
-    def peer_connect(self, dstaddr, dstport, *, net, devnet_name=None, uacomment=None):
+    def peer_connect(self, dstaddr, dstport, *, net, uacomment=None):
         assert not self.is_connected
         self.dstaddr = dstaddr
         self.dstport = dstport
@@ -110,14 +145,14 @@ class P2PConnection(asyncio.Protocol):
         self.on_connection_send_msg = None
         self.recvbuf = b""
         self.network = net
-        self.devnet_name = devnet_name
         self.uacomment = uacomment
 
-        if self.network == "devnet" and self.devnet_name is not None:
+        if self.network == "devnet":
+            devnet_name = "devnet1"  # see initialize_datadir()
             if self.uacomment is None:
-                self.strSubVer = MY_SUBVERSION % ("(devnet.devnet-%s)" % self.devnet_name).encode()
+                self.strSubVer = MY_SUBVERSION % ("(devnet.devnet-%s)" % devnet_name).encode()
             else:
-                self.strSubVer = MY_SUBVERSION % ("(devnet.devnet-%s,%s)" % (self.devnet_name, self.uacomment)).encode()
+                self.strSubVer = MY_SUBVERSION % ("(devnet.devnet-%s,%s)" % (devnet_name, self.uacomment)).encode()
         elif self.uacomment is not None:
             self.strSubVer = MY_SUBVERSION % ("(%s)" % self.uacomment).encode()
         else:
@@ -338,6 +373,7 @@ class P2PInterface(P2PConnection):
     def on_getheaders(self, message): pass
     def on_headers(self, message): pass
     def on_mempool(self, message): pass
+    def on_notfound(self, message): pass
     def on_pong(self, message): pass
     def on_reject(self, message): pass
     def on_sendaddrv2(self, message): pass
@@ -383,6 +419,14 @@ class P2PInterface(P2PConnection):
         time.sleep(1)
 
     # Message receiving helper methods
+
+    def wait_for_tx(self, txid, timeout=60):
+        def test_function():
+            if not self.last_message.get('tx'):
+                return False
+            return self.last_message['tx'].tx.rehash() == txid
+
+        wait_until(test_function, timeout=timeout, lock=mininode_lock)
 
     def wait_for_block(self, blockhash, timeout=60):
         test_function = lambda: self.last_message.get("block") and self.last_message["block"].block.rehash() == blockhash

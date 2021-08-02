@@ -52,9 +52,6 @@ if os.name == 'posix':
 TEST_EXIT_PASSED = 0
 TEST_EXIT_SKIPPED = 77
 
-# 30 minutes represented in seconds
-TRAVIS_TIMEOUT_DURATION = 30 * 60
-
 BASE_SCRIPTS = [
     # Scripts that are run by the travis build process.
     # Longest test should go first, to favor running tests in parallel
@@ -137,6 +134,7 @@ BASE_SCRIPTS = [
     'wallet_keypool.py',
     'wallet_keypool_hd.py',
     'p2p_mempool.py',
+    'p2p_blocksonly.py',
     'rpc_setban.py',
     'mining_prioritisetransaction.py',
     'p2p_invalid_locator.py',
@@ -153,7 +151,7 @@ BASE_SCRIPTS = [
     'feature_versionbits_warning.py',
     'rpc_preciousblock.py',
     'wallet_importprunedfunds.py',
-    'rpc_zmq.py',
+    'p2p_leak_tx.py',
     'rpc_signmessage.py',
     'feature_nulldummy.py',
     'mempool_accept.py',
@@ -193,6 +191,7 @@ BASE_SCRIPTS = [
     'p2p_unrequested_blocks.py',
     'feature_asmap.py',
     'feature_includeconf.py',
+    'rpc_scantxoutset.py',
     'feature_logging.py',
     'p2p_node_network_limited.py',
     'p2p_permissions.py',
@@ -346,12 +345,12 @@ def main():
         jobs=args.jobs,
         enable_coverage=args.coverage,
         args=passon_args,
-        runs_ci=args.ci,
         combined_logs_len=args.combinedlogslen,
-        failfast=args.failfast
+        failfast=args.failfast,
+        runs_ci=args.ci,
     )
 
-def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, enable_coverage=False, args=None, runs_ci=False, combined_logs_len=0,failfast=False):
+def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, enable_coverage=False, args=None, combined_logs_len=0,failfast=False, runs_ci=False):
     args = args or []
 
     # Warn if dashd is already running (unix only)
@@ -393,7 +392,7 @@ def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, enable_coverage=
         tmpdir=tmpdir,
         test_list=test_list,
         flags=flags,
-        timeout_duration=TRAVIS_TIMEOUT_DURATION if runs_ci else float('inf'),  # in seconds
+        timeout_duration=30 * 60 if runs_ci else float('inf'),  # in seconds
     )
     start_time = time.time()
     test_results = []
@@ -603,6 +602,7 @@ def check_script_list(*, src_dir, fail_on_warn):
         if fail_on_warn:
             # On travis this warning is an error to prevent merging incomplete commits into master
             sys.exit(1)
+
 
 class RPCCoverage():
     """

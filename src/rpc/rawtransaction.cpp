@@ -166,7 +166,7 @@ static UniValue getrawtransaction(const JSONRPCRequest& request)
             "     ,...\n"
             "  ],\n"
             "  \"extraPayloadSize\" : n    (numeric) Size of DIP2 extra payload. Only present if it's a special TX\n"
-            "  \"extraPayload\" : \"hex\"    (string) Hex encoded DIP2 extra payload data. Only present if it's a special TX\n"
+            "  \"extraPayload\" : \"hex\"    (string) Hex-encoded DIP2 extra payload data. Only present if it's a special TX\n"
             "  \"hex\" : \"data\",         (string) The serialized, hex-encoded data for 'txid'\n"
             "  \"blockhash\" : \"hash\",   (string) the block hash\n"
             "  \"height\" : n,             (numeric) The block height\n"
@@ -400,10 +400,9 @@ CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniVal
     UniValue outputs = outputs_is_obj ? outputs_in.get_obj() : outputs_in.get_array();
 
     CMutableTransaction rawTx;
-
     if (!locktime.isNull()) {
         int64_t nLockTime = locktime.get_int64();
-        if (nLockTime < 0 || nLockTime > std::numeric_limits<uint32_t>::max())
+        if (nLockTime < 0 || nLockTime > LOCKTIME_MAX)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, locktime out of range");
         rawTx.nLockTime = nLockTime;
     }
@@ -421,13 +420,13 @@ CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniVal
         if (nOutput < 0)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, vout must be positive");
 
-        uint32_t nSequence = (rawTx.nLockTime ? std::numeric_limits<uint32_t>::max() - 1 : std::numeric_limits<uint32_t>::max());
+        uint32_t nSequence = (rawTx.nLockTime ? CTxIn::SEQUENCE_FINAL - 1 : CTxIn::SEQUENCE_FINAL);
 
         // set the sequence number if passed in the parameters object
         const UniValue& sequenceObj = find_value(o, "sequence");
         if (sequenceObj.isNum()) {
             int64_t seqNr64 = sequenceObj.get_int64();
-            if (seqNr64 < 0 || seqNr64 > std::numeric_limits<uint32_t>::max())
+            if (seqNr64 < 0 || seqNr64 > CTxIn::SEQUENCE_FINAL)
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, sequence number is out of range");
             else
                 nSequence = (uint32_t)seqNr64;
@@ -509,7 +508,7 @@ static UniValue createrawtransaction(const JSONRPCRequest& request)
             "      \"address\": x.xxx,    (obj, optional) A key-value pair. The key (string) is the dash address, the value (float or string) is the amount in " + CURRENCY_UNIT + "\n"
             "    },\n"
             "    {\n"
-            "      \"data\": \"hex\"        (obj, optional) A key-value pair. The key must be \"data\", the value is hex encoded data\n"
+            "      \"data\": \"hex\"        (obj, optional) A key-value pair. The key must be \"data\", the value is hex-encoded data\n"
             "    }\n"
             "    ,...                     More key-value pairs of the above form. For compatibility reasons, a dictionary, which holds the key-value pairs directly, is also\n"
             "                             accepted as second parameter.\n"
@@ -586,7 +585,7 @@ static UniValue decoderawtransaction(const JSONRPCRequest& request)
             "     ,...\n"
             "  ],\n"
             "  \"extraPayloadSize\" : n           (numeric) Size of DIP2 extra payload. Only present if it's a special TX\n"
-            "  \"extraPayload\" : \"hex\"           (string) Hex encoded DIP2 extra payload data. Only present if it's a special TX\n"
+            "  \"extraPayload\" : \"hex\"           (string) Hex-encoded DIP2 extra payload data. Only present if it's a special TX\n"
             "}\n"
 
             "\nExamples:\n"
@@ -615,11 +614,11 @@ static UniValue decodescript(const JSONRPCRequest& request)
             "decodescript \"hexstring\"\n"
             "\nDecode a hex-encoded script.\n"
             "\nArguments:\n"
-            "1. \"hexstring\"     (string) the hex encoded script\n"
+            "1. \"hexstring\"     (string) the hex-encoded script\n"
             "\nResult:\n"
             "{\n"
             "  \"asm\":\"asm\",   (string) Script public key\n"
-            "  \"hex\":\"hex\",   (string) hex encoded public key\n"
+            "  \"hex\":\"hex\",   (string) hex-encoded public key\n"
             "  \"type\":\"type\", (string) The output type\n"
             "  \"reqSigs\": n,    (numeric) The required signatures\n"
             "  \"addresses\": [   (json array of string)\n"
@@ -917,7 +916,7 @@ static UniValue signrawtransactionwithkey(const JSONRPCRequest& request)
             "       }\n"
             "       ,...\n"
             "    ]\n"
-            "4. \"sighashtype\"                    (string, optional, default=ALL) The signature hash type. Must be one of\n"
+            "4. \"sighashtype\"                    (string, optional, default=ALL) The signature hash type. Must be one of:\n"
             "       \"ALL\"\n"
             "       \"NONE\"\n"
             "       \"SINGLE\"\n"
@@ -1092,7 +1091,7 @@ UniValue sendrawtransaction(const JSONRPCRequest& request)
             + HelpExampleCli("signrawtransaction", "\"myhex\"") +
             "\nSend the transaction (signed hex)\n"
             + HelpExampleCli("sendrawtransaction", "\"signedhex\"") +
-            "\nAs a json rpc call\n"
+            "\nAs a JSON-RPC call\n"
             + HelpExampleRpc("sendrawtransaction", "\"signedhex\"")
         );
 
@@ -1197,7 +1196,7 @@ static UniValue testmempoolaccept(const JSONRPCRequest& request)
             + HelpExampleCli("signrawtransaction", "\"myhex\"") +
             "\nTest acceptance of the transaction (signed hex)\n"
             + HelpExampleCli("testmempoolaccept", "\"signedhex\"") +
-            "\nAs a json rpc call\n"
+            "\nAs a JSON-RPC call\n"
             + HelpExampleRpc("testmempoolaccept", "[\"signedhex\"]")
             // clang-format on
             );
@@ -1630,7 +1629,7 @@ UniValue createpsbt(const JSONRPCRequest& request)
                             "      \"address\": x.xxx,    (obj, optional) A key-value pair. The key (string) is the Dash address, the value (float or string) is the amount in " + CURRENCY_UNIT + "\n"
                             "    },\n"
                             "    {\n"
-                            "      \"data\": \"hex\"        (obj, optional) A key-value pair. The key must be \"data\", the value is hex encoded data\n"
+                            "      \"data\": \"hex\"        (obj, optional) A key-value pair. The key must be \"data\", the value is hex-encoded data\n"
                             "    }\n"
                             "    ,...                     More key-value pairs of the above form. For compatibility reasons, a dictionary, which holds the key-value pairs directly, is also\n"
                             "                             accepted as second parameter.\n"

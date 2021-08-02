@@ -1043,6 +1043,8 @@ bool CWallet::AccountMove(std::string strFrom, std::string strTo, CAmount nAmoun
 
 bool CWallet::GetLabelDestination(CTxDestination &dest, const std::string& label, bool bForceNew)
 {
+    AssertLockHeld(cs_wallet);
+
     WalletBatch batch(*database);
 
     CAccount account;
@@ -1718,6 +1720,11 @@ CAmount CWallet::GetCredit(const CTxOut& txout, const isminefilter& filter) cons
 
 bool CWallet::IsChange(const CTxOut& txout) const
 {
+    return IsChange(txout.scriptPubKey);
+}
+
+bool CWallet::IsChange(const CScript& script) const
+{
     // TODO: fix handling of 'change' outputs. The assumption is that any
     // payment to a script that is ours, but is not in the address book
     // is change. That assumption is likely to break when we implement multisignature
@@ -1725,10 +1732,10 @@ bool CWallet::IsChange(const CTxOut& txout) const
     // a better way of identifying which outputs are 'the send' and which are
     // 'the change' will need to be implemented (maybe extend CWalletTx to remember
     // which output, if any, was change).
-    if (::IsMine(*this, txout.scriptPubKey))
+    if (::IsMine(*this, script))
     {
         CTxDestination address;
-        if (!ExtractDestination(txout.scriptPubKey, address))
+        if (!ExtractDestination(script, address))
             return true;
 
         LOCK(cs_wallet);
@@ -2469,6 +2476,8 @@ CAmount CWalletTx::GetAnonymizedCredit(const CCoinControl* coinControl) const
     if (!pwallet)
         return 0;
 
+    AssertLockHeld(pwallet->cs_wallet);
+
     // Exclude coinbase and conflicted txes
     if (IsCoinBase() || GetDepthInMainChain() < 0)
         return 0;
@@ -2508,6 +2517,8 @@ CAmount CWalletTx::GetDenominatedCredit(bool unconfirmed, bool fUseCache) const
 {
     if (pwallet == nullptr)
         return 0;
+
+    AssertLockHeld(pwallet->cs_wallet);
 
     // Must wait until coinbase is safely deep enough in the chain before valuing it
     if (IsCoinBase() && GetBlocksToMaturity() > 0)
@@ -3720,6 +3731,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CTransac
                 }
 
                 auto calculateFee = [&](CAmount& nFee) -> bool {
+                    AssertLockHeld(cs_wallet);
                     nBytes = CalculateMaximumSignedTxSize(txNew, this, coin_control.fAllowWatchOnly);
                     if (nBytes < 0) {
                         strFailReason = _("Signing transaction failed");
@@ -4377,11 +4389,14 @@ bool CWallet::ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool, bool fRe
 void CWallet::KeepKey(int64_t nIndex)
 {
     // Remove from key pool
-    WalletBatch batch(*database);
-    if (batch.ErasePool(nIndex))
-        --nKeysLeftSinceAutoBackup;
-    if (!nWalletBackups)
-        nKeysLeftSinceAutoBackup = 0;
+    {
+        LOCK(cs_wallet);
+        WalletBatch batch(*database);
+        if (batch.ErasePool(nIndex))
+            --nKeysLeftSinceAutoBackup;
+        if (!nWalletBackups)
+            nKeysLeftSinceAutoBackup = 0;
+    }
     WalletLogPrintf("keypool keep %d\n", nIndex);
 }
 

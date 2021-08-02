@@ -23,7 +23,6 @@
 #include <wallet/walletdb.h>
 #include <wallet/walletutil.h>
 
-#include <coinjoin/coinjoin.h>
 #include <governance/governance-object.h>
 
 #include <algorithm>
@@ -75,6 +74,7 @@ class CKey;
 class COutput;
 class CReserveKey;
 class CScript;
+class CTxDSIn;
 class CTxMemPool;
 class CBlockPolicyEstimator;
 class CWalletTx;
@@ -785,7 +785,7 @@ private:
     /* HD derive new child key (on internal or external chain) */
     void DeriveNewChildKey(WalletBatch &batch, const CKeyMetadata& metadata, CKey& secretRet, uint32_t nAccountIndex, bool fInternal /*= false*/) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 
-    std::set<int64_t> setInternalKeyPool;
+    std::set<int64_t> setInternalKeyPool GUARDED_BY(cs_wallet);
     std::set<int64_t> setExternalKeyPool GUARDED_BY(cs_wallet);
     int64_t m_max_keypool_index GUARDED_BY(cs_wallet) = 0;
     std::map<CKeyID, int64_t> m_pool_key_to_index;
@@ -1164,6 +1164,7 @@ public:
     isminetype IsMine(const CTxOut& txout) const;
     CAmount GetCredit(const CTxOut& txout, const isminefilter& filter) const;
     bool IsChange(const CTxOut& txout) const;
+    bool IsChange(const CScript& script) const;
     CAmount GetChange(const CTxOut& txout) const;
     bool IsMine(const CTransaction& tx) const;
     /** should probably be renamed to IsRelevantToMe */
