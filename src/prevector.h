@@ -565,7 +565,8 @@ public:
             if (v.size() != s) {
                 v.resize(s);
             }
-            ::memmove(v.data(), &*b, s);
+            if(v.size() != 0)
+                ::memmove(v.data(), &*b, s);
         } else {
             v.assign(&*b, &*e);
         }
