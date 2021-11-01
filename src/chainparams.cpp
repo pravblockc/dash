@@ -273,6 +273,7 @@ public:
         consensus.llmqTypeChainLocks = Consensus::LLMQType::LLMQ_400_60;
         consensus.llmqTypeInstantSend = Consensus::LLMQType::LLMQ_50_60;
         consensus.llmqTypePlatform = Consensus::LLMQType::LLMQ_100_67;
+        consensus.llmqTypeMnhf = Consensus::LLMQType::LLMQ_400_85;
 
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;

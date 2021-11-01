@@ -106,6 +106,7 @@ EXPECTED_CIRCULAR_DEPENDENCIES=(
     "governance/governance -> net_processing -> masternode/payments -> governance/governance"
     "evo/deterministicmns -> evo/simplifiedmns -> llmq/blockprocessor -> net -> evo/deterministicmns"
     "coinjoin/coinjoin -> llmq/chainlocks -> net -> coinjoin/coinjoin"
+    "evo/mnhftx -> evo/specialtx -> evo/mnhftx"
 )
 
 EXIT_CODE=0

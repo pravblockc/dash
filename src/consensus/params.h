@@ -115,6 +115,7 @@ struct Params {
     LLMQType llmqTypeChainLocks;
     LLMQType llmqTypeInstantSend{LLMQType::LLMQ_NONE};
     LLMQType llmqTypePlatform{LLMQType::LLMQ_NONE};
+    LLMQType llmqTypeMnhf{LLMQType::LLMQ_NONE};
 };
 } // namespace Consensus
 
