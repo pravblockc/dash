@@ -15,6 +15,8 @@
 #include <llmq/commitment.h>
 #include <llmq/blockprocessor.h>
 
+#include <evo/mnhftx.h>
+
 bool CheckSpecialTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidationState& state, const CCoinsViewCache& view)
 {
     if (tx.nVersion != 3 || tx.nType == TRANSACTION_NORMAL)
@@ -38,6 +40,8 @@ bool CheckSpecialTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CVali
             return CheckCbTx(tx, pindexPrev, state);
         case TRANSACTION_QUORUM_COMMITMENT:
             return llmq::CheckLLMQCommitment(tx, pindexPrev, state);
+        case TRANSACTION_MNHF_SIGNAL:
+            return CheckMNHFTx(tx, pindexPrev, state);
         }
     } catch (const std::exception& e) {
         LogPrintf("%s -- failed: %s\n", __func__, e.what());
@@ -63,6 +67,8 @@ bool ProcessSpecialTx(const CTransaction& tx, const CBlockIndex* pindex, CValida
         return true; // nothing to do
     case TRANSACTION_QUORUM_COMMITMENT:
         return true; // handled per block
+    case TRANSACTION_MNHF_SIGNAL:
+        return true; // handled per block
     }
 
     return state.DoS(100, false, REJECT_INVALID, "bad-tx-type-proc");
@@ -83,6 +89,8 @@ bool UndoSpecialTx(const CTransaction& tx, const CBlockIndex* pindex)
     case TRANSACTION_COINBASE:
         return true; // nothing to do
     case TRANSACTION_QUORUM_COMMITMENT:
+        return true; // handled per block
+    case TRANSACTION_MNHF_SIGNAL:
         return true; // handled per block
     }
 

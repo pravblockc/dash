@@ -159,6 +159,7 @@ BITCOIN_CORE_H = \
   ctpl_stl.h \
   cxxtimer.hpp \
   evo/cbtx.h \
+  evo/mnhftx.h \
   evo/deterministicmns.h \
   evo/evodb.h \
   evo/mnauth.h \
@@ -338,6 +339,7 @@ libdash_server_a_SOURCES = \
   consensus/tx_verify.cpp \
   dsnotificationinterface.cpp \
   evo/cbtx.cpp \
+  evo/mnhftx.cpp \
   evo/deterministicmns.cpp \
   evo/evodb.cpp \
   evo/mnauth.cpp \
