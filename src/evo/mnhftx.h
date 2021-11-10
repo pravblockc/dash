@@ -8,9 +8,12 @@
 #include <primitives/transaction.h>
 #include <univalue.h>
 #include <bls/bls.h>
+#include <sync.h>
+#include <threadsafety.h>
 
 class CBlockIndex;
 class CValidationState;
+extern CCriticalSection cs_main;
 
 // mnhf signal special transaction
 class MNHFTx
@@ -24,7 +27,7 @@ public:
 
 public:
     MNHFTx() = default;
-    bool Verify(const CBlockIndex* pQuorumIndex, bool checkSigs) const;
+    bool Verify(const CBlockIndex* pQuorumIndex) const;
 
     SERIALIZE_METHODS(MNHFTx, obj)
     {
@@ -42,7 +45,6 @@ public:
         obj.pushKV("sig", sig.ToString());
     }
 };
-
 
 class MNHFTxPayload
 {
@@ -70,6 +72,6 @@ public:
     }
 };
 
-bool CheckMNHFTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidationState& state);
+bool CheckMNHFTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidationState& state) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
 
 #endif // BITCOIN_EVO_MNHFTX_H
