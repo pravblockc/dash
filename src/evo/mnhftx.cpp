@@ -35,7 +35,7 @@ bool MNHFTx::Verify(const CBlockIndex* pQuorumIndex) const
     return true;
 }
 
-bool CheckMNHFTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidationState& state)
+bool CheckMNHFTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidationState& state) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
     MNHFTxPayload mnhfTx;
     if (!GetTxPayload(tx, mnhfTx)) {
