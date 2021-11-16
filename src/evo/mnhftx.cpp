@@ -50,7 +50,7 @@ bool CheckMNHFTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidat
     if (!pindexQuorum) {
         return state.DoS(100, false, REJECT_INVALID, "bad-mnhf-quorum-hash");
     }
-    
+
     if (pindexQuorum != pindexPrev->GetAncestor(pindexQuorum->nHeight)) {
         // not part of active chain
         return state.DoS(100, false, REJECT_INVALID, "bad-mnhf-quorum-hash");
@@ -72,3 +72,4 @@ std::string MNHFTx::ToString() const
     return strprintf("MNHFTx(nVersion=%d, quorumHash=%s, sig=%s)",
         nVersion, quorumHash.ToString(), sig.ToString());
 }
+

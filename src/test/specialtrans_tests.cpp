@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <test/test_dash.h>
+#include <test/setup_common.h>
 #include <bls/bls.h>
 #include <bls/bls_batchverifier.h>
 
@@ -47,13 +47,13 @@ static CMutableTransaction CreateMNHFTx(const uint256& mnhfTxHash, const CBLSSig
     return tx;
 }
 
-BOOST_FIXTURE_TEST_SUITE(spTx_tests, BasicTestingSetup)
+BOOST_FIXTURE_TEST_SUITE(specialtrans_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(verify_mnhf_specialtx_tests)
 {
     int count = 10;
     uint16_t ver = 2;
-    
+
     std::vector<CBLSSignature> vec_sigs;
     std::vector<CBLSPublicKey> vec_pks;
     std::vector<CBLSSecretKey> vec_sks;
