@@ -594,4 +594,25 @@ bool CQuorumBlockProcessor::GetMineableCommitmentTx(const Consensus::LLMQParams&
     return true;
 }
 
+bool CQuorumBlockProcessor::GetMineableCommitmentTx(const Consensus::LLMQParams& llmqParams, int nHeight, CTransactionRef& ret) const
+{
+    AssertLockHeld(cs_main);
+
+    CFinalCommitmentTxPayload qc;
+    if (!GetMineableCommitment(llmqParams, nHeight, qc.commitment)) {
+        return false;
+    }
+
+    qc.nHeight = nHeight;
+
+    CMutableTransaction tx;
+    tx.nVersion = 3;
+    tx.nType = TRANSACTION_QUORUM_COMMITMENT;
+    SetTxPayload(tx, qc);
+
+    ret = MakeTransactionRef(tx);
+
+    return true;
+}
+
 } // namespace llmq

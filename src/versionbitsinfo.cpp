@@ -52,4 +52,9 @@ const struct VBDeploymentInfo VersionBitsDeploymentInfo[Consensus::MAX_VERSION_B
         /*.gbt_force =*/ true,
         /*.check_mn_protocol =*/ false,
     },
+    {
+        /*.name =*/ "ehf",
+        /*.gbt_force =*/ true,
+        /*.check_mn_protocol =*/ false,
+    },
 };

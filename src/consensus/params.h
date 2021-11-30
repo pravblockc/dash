@@ -24,6 +24,7 @@ enum DeploymentPos
     DEPLOYMENT_REALLOC, // Deployment of Block Reward Reallocation
     DEPLOYMENT_DIP0020, // Deployment of DIP0020, DIP0021 and LMQ_100_67 quorums
     DEPLOYMENT_GOV_FEE, // Deployment of decreased governance proposal fee
+    DEPLOYMENT_EHF, // Deployment of DIP0023 - Enhanced hardfork feature
     // NOTE: Also add new deployments to VersionBitsDeploymentInfo in versionbits.cpp
     MAX_VERSION_BITS_DEPLOYMENTS
 };
