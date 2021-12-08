@@ -20,6 +20,7 @@
 #include <validation.h>
 #include <saltedhasher.h>
 #include <sync.h>
+#include <evo/mnhftx.h>
 
 #include <map>
 
@@ -594,21 +595,19 @@ bool CQuorumBlockProcessor::GetMineableCommitmentTx(const Consensus::LLMQParams&
     return true;
 }
 
-bool CQuorumBlockProcessor::GetMineableCommitmentTx(const Consensus::LLMQParams& llmqParams, int nHeight, CTransactionRef& ret) const
+bool CQuorumBlockProcessor::GetMNHFMineableCommitmentTx(const Consensus::LLMQParams& llmqParams, int nHeight, CTransactionRef& ret) const
 {
     AssertLockHeld(cs_main);
 
-    CFinalCommitmentTxPayload qc;
-    if (!GetMineableCommitment(llmqParams, nHeight, qc.commitment)) {
+    MNHFTxPayload mnhf;
+    if (!GetMineableCommitment(llmqParams, nHeight, mnhf.commitment)) {
         return false;
     }
 
-    qc.nHeight = nHeight;
-
     CMutableTransaction tx;
     tx.nVersion = 3;
-    tx.nType = TRANSACTION_QUORUM_COMMITMENT;
-    SetTxPayload(tx, qc);
+    tx.nType = TRANSACTION_MNHF_SIGNAL;
+    SetTxPayload(tx, mnhf);
 
     ret = MakeTransactionRef(tx);
 
