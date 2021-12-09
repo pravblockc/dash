@@ -599,15 +599,23 @@ bool CQuorumBlockProcessor::GetMNHFMineableCommitmentTx(const Consensus::LLMQPar
 {
     AssertLockHeld(cs_main);
 
-    MNHFTxPayload mnhf;
-    if (!GetMineableCommitment(llmqParams, nHeight, mnhf.commitment)) {
+    if(llmqParams.type != Consensus::LLMQType::LLMQ_400_85)
         return false;
-    }
+
+    MNHFTxPayload mnhfPayload;
+    mnhfPayload.nVersion = 1;
+    mnhfPayload.signal.nVersion = versionBit;
+    uint256 quorumHash = GetQuorumBlockHash(llmqParams, nHeight);
+    if (quorumHash.IsNull()) {
+        return false;
+    
+    mnhfPayload.signal.quorumHash = quorumHash;
+    mnhfPayload.signal.sig = cblSig;
 
     CMutableTransaction tx;
     tx.nVersion = 3;
     tx.nType = TRANSACTION_MNHF_SIGNAL;
-    SetTxPayload(tx, mnhf);
+    SetTxPayload(tx, mnhfPayload);
 
     ret = MakeTransactionRef(tx);
 
