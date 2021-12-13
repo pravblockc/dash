@@ -13,6 +13,7 @@
 #include <chainparams.h>
 #include <consensus/params.h>
 #include <consensus/validation.h>
+#include <masternode/node.h>
 #include <net.h>
 #include <net_processing.h>
 #include <primitives/block.h>
@@ -602,15 +603,23 @@ bool CQuorumBlockProcessor::GetMNHFMineableCommitmentTx(const Consensus::LLMQPar
     if(llmqParams.type != Consensus::LLMQType::LLMQ_400_85)
         return false;
 
-    MNHFTxPayload mnhfPayload;
-    mnhfPayload.nVersion = 1;
-    mnhfPayload.signal.nVersion = versionBit;
     uint256 quorumHash = GetQuorumBlockHash(llmqParams, nHeight);
     if (quorumHash.IsNull()) {
         return false;
+    }
     
+    uint16_t bitVersion = Params().GetConsensus().vDeployments[Consensus::DEPLOYMENT_EHF].bit;
+    uint256 verHash = uint256S(itostr(bitVersion));
+    CBLSSignature sig = WITH_LOCK(activeMasternodeInfoCs, return activeMasternodeInfo.blsKeyOperator->Sign(verHash));
+    if (!sig.IsValid()) {
+        return false;
+    }
+
+    MNHFTxPayload mnhfPayload;
+    mnhfPayload.nVersion = 1;
+    mnhfPayload.signal.nVersion = bitVersion;    
     mnhfPayload.signal.quorumHash = quorumHash;
-    mnhfPayload.signal.sig = cblSig;
+    mnhfPayload.signal.sig = sig;
 
     CMutableTransaction tx;
     tx.nVersion = 3;
