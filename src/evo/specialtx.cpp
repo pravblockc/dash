@@ -7,6 +7,7 @@
 #include <chainparams.h>
 #include <consensus/validation.h>
 #include <evo/cbtx.h>
+#include <evo/mnhftx.h>
 #include <evo/deterministicmns.h>
 #include <evo/mnhftx.h>
 #include <hash.h>
